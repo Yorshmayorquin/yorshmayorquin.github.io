@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resumen de Inventarios</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Inventario Bodega Arvil</h1>
+    <form id="inventoryForm">
+        <label for="date">Fecha de Inventario:</label>
+        <input type="date" id="date" name="date" required>
+        <label for="product">Producto:</label>
+        <select id="product" name="product" required>
+            <option value="" disabled selected>Selecciona un producto</option>
+        </select>
+        <label for="quantity">Cantidad:</label>
+        <input type="number" id="quantity" name="quantity" min="0" required>
+        <button type="submit">Agregar</button>
+    </form>
+    <table id="inventoryTable">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <script>
+        const products = [
+            '205 [Lts]', '330 [Lts]', '1370 [Lts]', 'Amoniaco [Lts]', 'Bolsas Negras [Pza]',
+            'Calcio [Kg]', 'Conservador [Lts]', 'Cubetas [Pza]', 'Espesante [Lts]', 'Fibra [Grs]',
+            'Resina 611 [Lts]', 'Resina 6485 [Lts]', 'Tapaderas [Pza]', 'Texanol [Lts]', 'Titanio [Kg]',
+            'Tylose [Kg]', 'Cubetas Cemento', 'Cubetas Imper', 'Cubetas Pintura', 'Cubetas Sello', 'Tambo Imper 5 Blanco [Lts]',
+            'Tambo Imper 5 Gris [Lts]', 'Tambo Pintura Antigua [Lts]', 'Tambo Pintura Blanca [Lts]', 'Tambo Sellador [Lts]'
+        ];
+
+        const productSelect = document.getElementById('product');
+        const form = document.getElementById('inventoryForm');
+        const tableBody = document.getElementById('inventoryTable').querySelector('tbody');
+
+        products.forEach(product => {
+            const option = document.createElement('option');
+            option.value = product;
+            option.textContent = product;
+            productSelect.appendChild(option);
+        });
+
+        let editingRow = null;
+
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const date = document.getElementById('date').value;
+            const product = document.getElementById('product').value;
+            const quantity = document.getElementById('quantity').value;
+
+            if (editingRow) {
+                editingRow.children[0].textContent = date;
+                editingRow.children[1].textContent = product;
+                editingRow.children[2].textContent = quantity;
+                editingRow = null;
+            } else {
+                const row = document.createElement('tr');
+
+                row.innerHTML = `
+                    <td>${date}</td>
+                    <td>${product}</td>
+                    <td>${quantity}</td>
+                    <td class="actions">
+                        <button onclick="editRow(this)">Editar</button>
+                        <button onclick="deleteRow(this)">Eliminar</button>
+                    </td>
+                `;
+
+                tableBody.appendChild(row);
+            }
+
+            saveToLocalStorage();
+            form.reset();
+        });
+
+        function editRow(button) {
+            const row = button.parentNode.parentNode;
+            document.getElementById('date').value = row.children[0].textContent;
+            document.getElementById('product').value = row.children[1].textContent;
+            document.getElementById('quantity').value = row.children[2].textContent;
+            editingRow = row;
+        }
+
+        function deleteRow(button) {
+            const row = button.parentNode.parentNode;
+            tableBody.removeChild(row);
+            saveToLocalStorage();
+        }
+
+        function saveToLocalStorage() {
+            const inventoryData = [];
+            tableBody.querySelectorAll('tr').forEach(row => {
+                const date = row.children[0].textContent;
+                const product = row.children[1].textContent;
+                const quantity = row.children[2].textContent;
+                inventoryData.push({ date, product, quantity });
+            });
+            localStorage.setItem('inventoryData', JSON.stringify(inventoryData));
+        }
+
+        function loadFromLocalStorage() {
+            const inventoryData = JSON.parse(localStorage.getItem('inventoryData')) || [];
+            inventoryData.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.date}</td>
+                    <td>${item.product}</td>
+                    <td>${item.quantity}</td>
+                    <td class="actions">
+                        <button onclick="editRow(this)">Editar</button>
+                        <button onclick="deleteRow(this)">Eliminar</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadFromLocalStorage);
+    </script>
+</body>
+</html>
